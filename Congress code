@@ -1,0 +1,47 @@
+
+legislators <- read.csv("~/Desktop/Magid Summer Internship/Pre-June 1 Project/legislators-current.csv")
+
+library(plyr)
+library(dplyr)
+library(stringr)
+
+congress_names = select(legislators, first_name, last_name, state)
+combined_names = within(congress_names, name <- paste(first_name,last_name, sep=' '))
+reduced_combined_names = select(combined_names, name, state)
+
+pacs14 <- read.csv("~/Desktop/Magid Summer Internship/Pre-June 1 Project/CampaignFin14/pacs14.txt", header=FALSE)
+
+congress_5000 = filter(pacs14, V5 >= 5000)
+
+colnames(congress_5000)[colnames(congress_5000) == "V4"] = "opensecretsid"
+
+opensecrets_id = c(rep(NA, length(congress_5000$opensecretsid)))
+for (i in 1:length(congress_5000$opensecretsid))
+{
+  char_id = as.character(congress_5000$opensecretsid[i])
+  opensecrets_id[i] = char_id
+}
+
+
+opensecrets_id = substr(congress_5000$opensecretsid, 2, 10)
+congress_5000_join = cbind(opensecrets_id, congress_5000)
+
+opensecrets_id = substr(congress_5000$opensecretsid, 2, 10)
+
+congress_5000_join = cbind(opensecrets_id, congress_5000)
+
+contributions = join(legislators, congress_5000_join, type = "inner", match = "all")
+
+colnames(contributions)[colnames(contributions) == "V5"] = "amount"
+
+states = unique(contributions$state)
+
+amount_per = c(rep(NA,56))
+for (i in 1:length(states))
+{
+  reduced = filter(contributions, state == states[i])
+  state_amount = sum(reduced$amount)
+  amount_per[i] = state_amount
+}
+
+campaign_contributions = data.frame(states, amount_per)
