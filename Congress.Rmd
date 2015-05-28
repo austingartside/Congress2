@@ -1,0 +1,95 @@
+---
+title: "Congress"
+author: "Austin Gartside"
+date: "May 24, 2015"
+output: html_document
+---
+
+
+Load in the data from a file
+```{r}
+legislators <- read.csv("~/Desktop/Magid Summer Internship/Pre-June 1 Project/legislators-current.csv")
+```
+
+Import packages
+```{r}
+library(plyr)
+library(dplyr)
+library(stringr)
+```
+
+Extract the names and states of the congressmen 
+```{r}
+congress_names = select(legislators, first_name, last_name, state)
+combined_names = within(congress_names, name <- paste(first_name,last_name, sep=' '))
+reduced_combined_names = select(combined_names, name, state)
+```
+
+
+Load in pac dataset
+```{r}
+pacs14 <- read.csv("~/Desktop/Magid Summer Internship/Pre-June 1 Project/CampaignFin14/pacs14.txt", header=FALSE)
+```
+
+Get pac contributions greater than or equal to 5000
+```{r}
+congress_5000 = filter(pacs14, V5 >= 5000)
+```
+
+Rename the column in Congress dataset to match legislator dataset
+```{r}
+colnames(congress_5000)[colnames(congress_5000) == "V4"] = "opensecretsid"
+```
+
+```{r}
+opensecrets_id = c(rep(NA, length(congress_5000$opensecretsid)))
+for (i in 1:length(congress_5000$opensecretsid))
+{
+  char_id = as.character(congress_5000$opensecretsid[i])
+  opensecrets_id[i] = char_id
+}
+
+
+opensecrets_id = substr(congress_5000$opensecretsid, 2, 10)
+congress_5000_join = cbind(opensecrets_id, congress_5000)
+```
+
+Get rid of the vertical lines in the opensecret id in the Congress_5000 dataset
+```{r}
+opensecrets_id = substr(congress_5000$opensecretsid, 2, 10)
+```
+
+Add the new column of opensecret id's to the Congress_5000 data
+```{r}
+congress_5000_join = cbind(opensecrets_id, congress_5000)
+```
+
+Join with the legislator dataset to get the contributions for current legislators
+```{r}
+contributions = join(legislators, congress_5000_join, type = "inner", match = "all")
+```
+
+Change column name for amount
+```{r}
+colnames(contributions)[colnames(contributions) == "V5"] = "amount"
+```
+
+Get a list of the states
+```{r}
+states = unique(contributions$state)
+```
+
+Create the table with the states and the amount donated to Congressmen of those states
+```{r}
+amount_per = c(rep(NA,56))
+for (i in 1:length(states))
+{
+  reduced = filter(contributions, state == states[i])
+  state_amount = sum(reduced$amount)
+  amount_per[i] = state_amount
+}
+
+campaign_contributions = data.frame(states, amount_per)
+```
+
+
