@@ -55,12 +55,12 @@ congress_5000_join = cbind(opensecrets_id, congress_5000)
 
 Get rid of the vertical lines in the opensecret id in the Congress_5000 dataset
 ```{r}
-opensecrets_id = substr(congress_5000$opensecretsid, 2, 10)
+opensecrets_id = str_sub(congress_5000$opensecretsid, 2, 10)
 ```
 
 Add the new column of opensecret id's to the Congress_5000 data
 ```{r}
-congress_5000_join = cbind(opensecrets_id, congress_5000)
+congress_5000_join = bind_cols(opensecrets_id, congress_5000)
 ```
 
 Join with the legislator dataset to get the contributions for current legislators
